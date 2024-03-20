@@ -131,30 +131,26 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     // pulsar wind parameters
     pulsar_wind = pin->GetBoolean("problem", "pulsar_wind");        // if the pulsar wind is enabled
     R_w_NS = pin->GetReal("problem", "R_w_NS");                     // radius of the NS wind launch surface
-    double gamma_v_w_NS = pin->GetReal("problem", "gamma_v_w_NS");  // velocity of the wind from the NS
     //p_w_NS = pin->GetReal("problem", "p_w_NS");                     // pressure of the wind from the NS
     sigma_NS = pin->GetReal("problem", "sigma_NS");
     B_NS = pin->GetReal("problem", "B_NS");  // magnetic field of the NS at the wind launch surface R_w_NS
 
     // calculate solar wind parameters
-    rho_w_s = Mdot_s / (4 * PI * R_w_s * R_w_s * v_w_s);  //
+    rho_w_s = Mdot_s / (4 * PI * R_w_s * R_w_s * v_w_s); 
     p_w_s = p_amb;
-    double gamma_w_s = 1 / sqrt(1 - v_w_s * v_w_s);       // Lorentz factor of the solar wind
     double L_w_s_matter = 0.5 * rho_w_s * v_w_s * v_w_s * 4 * pi * R_w_s * R_w_s *
                           v_w_s;             // matter luminosity of the wind from the star
     double L_w_s_magnetic = B_star * B_star;  // magnetic luminosity of the wind from the star
 
     // calculate the pulsar wind parameters
-    v_w_NS = sqrt(1 - 1 / gamma_v_w_NS / gamma_v_w_NS);  // velocity of the pulsar wind at wind lauching surface
-    rho_w_NS = B_NS * B_NS / sigma_NS / gamma_v_w_NS /
-               gamma_v_w_NS;  // density of the pulsar wind at the wind launching surface
+    v_w_NS = pin->GetReal("problem", "v_w_NS");  // velocity of the pulsar wind at wind lauching surface
+    rho_w_NS = B_NS * B_NS / sigma_NS;  // density of the pulsar wind at the wind launching surface
     p_w_NS = p_amb;
-    double L_w_NS_matter = gamma_v_w_NS * gamma_v_w_NS * rho_w_NS * 4 * pi * R_w_NS * R_w_NS *
+    double L_w_NS_matter = rho_w_NS * 4 * pi * R_w_NS * R_w_NS *
                            v_w_NS;         // matter luminosity of the wind from the NS
     double L_w_NS_magnetic = B_NS * B_NS;  // magnetic luminosity of the wind from the NS
-
-    std::cout << "rho_w_NS / gamma_v_w_NS / v_w_NS" << rho_w_NS << "/"
-              << gamma_v_w_NS << "/" << v_w_NS << std::endl;
+    std::cout << "rho_w_s: " << rho_w_s << "rho_w_NS"
+              << rho_w_NS << std::endl;
     std::cout << "Luminosity of the solar wind (tot/matter/magnetic): " << L_w_s_matter + L_w_s_magnetic << "/"
               << L_w_s_matter << "/" << L_w_s_magnetic << std::endl;
     std::cout << "Luminosity of the pulsar wind (tot/matter/magnetic) " << L_w_NS_matter + L_w_NS_magnetic << "/"
@@ -239,7 +235,7 @@ void UpdateSrc(MeshBlock *pmb, const Real time, const Real dt, AthenaArray<Real>
                     cons(IM2, k, j, i) = rho_w_NS * vy_;               // momentum y
                     cons(IM3, k, j, i) = rho_w_NS * vz_;               // momentum z
                     cons(IEN, k, j, i) = 
-                        p_w_s / (gamma_eos - 1) + 0.5 * rho_w_s * (vx_ * vx_ + vy_ * vy_ + vz_ * vz_); // Energy
+                        p_w_NS / (gamma_eos - 1) + 0.5 * rho_w_NS * (vx_ * vx_ + vy_ * vy_ + vz_ * vz_); // Energy
                 }
 
                 // gravity of the star
@@ -268,7 +264,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                 phydro->u(IM1, k, j, i) = 0.0;
                 phydro->u(IM2, k, j, i) = 0.0;
                 phydro->u(IM3, k, j, i) = 0.0;
-                phydro->u(IEN, k, j, i) = rho_amb + gamma_eos / (gamma_eos - 1) * p_amb - p_amb;
+                phydro->u(IEN, k, j, i) = p_w_NS / (gamma_eos - 1);
             }
         }
     }
