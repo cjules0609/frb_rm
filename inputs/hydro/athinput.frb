@@ -1,0 +1,72 @@
+<comment>
+problem   = spherical MHD blast wave in spherical coordinates
+configure = --prob=frb -b -s
+
+<job>
+problem_id = frb      # problem ID: basename of output filenames
+
+<output1>
+file_type  = vtk       # Binary data dump
+variable   = prim      # variables to be output
+dt         = 0.1  # time increment between outputs
+
+<time>
+cfl_number = 0.3        # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1         # cycle limit
+tlim       = 50       # time limit
+integrator  = vl2       # time integration algorithm
+xorder      = 2         # order of spatial reconstruction
+ncycle_out  = 10         # interval for stdout summary info
+
+<mesh>
+nx1        = 512       # Number of zones in X1-direction
+x1min      = -10    # minimum value of X1
+x1max      = 10     # maximum value of X1
+ix1_bc     = outflow   # inner-X1 boundary flag
+ox1_bc     = outflow    # outer-X1 boundary flag
+x1rat      = 1
+
+nx2        = 512               # Number of zones in X2-direction
+x2min      = -10                        # minimum value of X2
+x2max      = 10  	# maximum value of X2
+ix2_bc     = outflow             # inner-X2 boundary flag
+ox2_bc     = outflow              # outer-X2 boundary flag
+x2rat      = 1
+
+nx3        = 1             # Number of zones in X3-direction
+x3min      = -1        # minimum value of X3
+x3max      =  1       # maximum value of X3
+ix3_bc     = periodic         # inner-X3 boundary flag
+ox3_bc     = periodic        # outer-X3 boundary flag 
+
+#num_threads = 96
+
+
+<hydro>
+gamma  = 1.666666666666666666  # gamma = C_p/C_v
+dfloor = 1e-20
+pfloor = 1e-20
+
+<problem>   
+rho_amb = 1e-5
+p_amb = 1e-5
+
+a_binary = 3
+e_binary = 0
+
+m_star = 50 # m_sun
+R_w_s = 1 # r_sun (wind-launchiung surface)
+Mdot_s = 1e-5 # 1e-7 M_sun/s
+v_w_s = 10  # stellar wind speed at the surface of the star
+B_star = 0.1 # G
+#p_w_s = 1e-31
+
+m_NS = 20
+R_w_NS = 0.5
+pulsar_wind = 1
+gamma_v_w_NS = 2
+B_NS = 10 # G
+sigma_NS = 10
+#p_w_NS = 1e-31
+
+
