@@ -8,27 +8,27 @@ problem_id = frb      # problem ID: basename of output filenames
 <output1>
 file_type  = vtk       # Binary data dump
 variable   = prim      # variables to be output
-dt         = 0.1  # time increment between outputs
+dt         = 1e-3  # time increment between outputs
 
 <time>
 cfl_number = 0.3        # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = -1         # cycle limit
-tlim       = 50       # time limit
+tlim       = 1       # time limit
 integrator  = vl2       # time integration algorithm
 xorder      = 2         # order of spatial reconstruction
 ncycle_out  = 10         # interval for stdout summary info
 
 <mesh>
 nx1        = 512       # Number of zones in X1-direction
-x1min      = -10    # minimum value of X1
-x1max      = 10     # maximum value of X1
+x1min      = -1    # minimum value of X1
+x1max      = 1     # maximum value of X1
 ix1_bc     = outflow   # inner-X1 boundary flag
 ox1_bc     = outflow    # outer-X1 boundary flag
 x1rat      = 1
 
 nx2        = 512               # Number of zones in X2-direction
-x2min      = -10                        # minimum value of X2
-x2max      = 10  	# maximum value of X2
+x2min      = -1                        # minimum value of X2
+x2max      = 1  	# maximum value of X2
 ix2_bc     = outflow             # inner-X2 boundary flag
 ox2_bc     = outflow              # outer-X2 boundary flag
 x2rat      = 1
@@ -43,30 +43,30 @@ ox3_bc     = periodic        # outer-X3 boundary flag
 
 
 <hydro>
-gamma  = 1.666666666666666666  # gamma = C_p/C_v
+gamma  = 1.66666666666  # gamma = C_p/C_v
 dfloor = 1e-20
-pfloor = 1e-20
+pfloor = 1e-22
 
 <problem>   
-rho_amb = 1e-5
-p_amb = 1e-5
+rho_amb = 1e-15
+cs_amb = 0.1
 
-a_binary = 3
+a_binary = 0.23333
 e_binary = 0
 
-m_star = 50 # m_sun
-R_w_s = 1 # r_sun (wind-launchiung surface)
-Mdot_s = 1e-5 # 1e-7 M_sun/s
+m_star = 15 # m_sun
+R_w_s = 0.04666 #(wind-launchiung surface NOT the radius of the star)
+Mdot_s = 1.58e-7  
 v_w_s = 10  # stellar wind speed at the surface of the star
-B_star = 0.1 # G
-#p_w_s = 1e-31
+cs_w_s = 0.1  # sound speed in the wind
+B_star = 4.3e-5 # magnetic field strength at the `launching` surface NOT at the surface of the star
 
-m_NS = 20
-R_w_NS = 0.5
+
+m_NS = 1.4
+R_w_NS = 0.04666
+
 pulsar_wind = 1
-gamma_v_w_NS = 2
-B_NS = 10 # G
+v_w_NS = 10
+cs_w_NS = 0.1
+B_NS = 0.0015 # magnetic field strength at the `launching` surface NOT at the surface of the NS 
 sigma_NS = 10
-#p_w_NS = 1e-31
-
-

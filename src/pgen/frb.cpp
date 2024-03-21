@@ -32,7 +32,8 @@ void BinarySrc(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray
 
 double gamma_eos = 5.0 / 3;
 double rho_amb = 1e-10;
-double p_amb = 1e-13;
+double cs_amb = 1e-13;
+double p_amb = 0.0;
 
 // orbital parameters
 double m_star = 0.0;
@@ -41,21 +42,21 @@ double a_binary = 0.0;
 double e_binary = 0.0;
 
 // solar wind parameters
-
 double rho_w_s = 0;
 double R_w_s = 0.0;
 double v_w_s = 0;
 double p_w_s = 0.0;
+double cs_w_s = 0.0;
 double B_star = 0.0;
 double Mdot_s = 0.0;
 
 // pulsar wind parameters
 bool pulsar_wind = false;
-double R_w_NS = 0.0;
 double rho_w_NS = 0;
+double R_w_NS = 0.0;
 double v_w_NS = 0.0;
 double p_w_NS = 0.0;
-
+double cs_w_NS = 0.0;
 double B_NS = 0;
 double sigma_NS = 0;
 
@@ -107,11 +108,36 @@ static Real A3(const Real x1, const Real x2, const Real x3);
 void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, int js, int je, int ks, int ke,
                double x_offset, double y_offset, double R, double B, int ngh);
 
+double print_wind_info(std::string name, double ei, double ek, double eB, double p_g, double S, double v, double rho,
+                       double cs, double B, double R_w) {
+    double p_mag = eB;
+    double F = S * v;
+    double Lt = (ei + p_g) * F;
+    double Lk = ek * F;
+    double Lm = (eB + p_mag) * F;
+    double Ltot = Lt + Lk + Lm;
+    std::cout << name << " :\n";
+    std::cout << " -Launch Radius r_w: " << R_w << "\n";
+    std::cout << "  --Density(r_w): " << rho << std::endl;
+    std::cout << "  --B(r_w): " << B << std::endl;
+    std::cout << "  --Sound speed(r_w): " << cs << std::endl;
+    std::cout << "  --Velocity(r_w): " << v << std::endl;
+    std::cout << " -Total Luminosity: " << Ltot << std::endl;
+    std::cout << "   --Thermal Luminosity: " << Lt << ' ' << 100 * Lt / Ltot << "%" << std::endl;
+    std::cout << "   --Kinetic Luminosity: " << Lk << ' ' << 100 * Lk / Ltot << "%" << std::endl;
+    std::cout << "   --Mangetic Luminosity: " << Lm << ' ' << 100 * Lm / Ltot << "%" << std::endl;
+    std::cout << "   --sigma: " << Lm / (Lt + Lk) << std::endl;
+    std::cout << std::endl;
+
+    return Ltot;
+}
+
 void Mesh::InitUserMeshData(ParameterInput *pin) {
     // read hydro parameters from the input file
     gamma_eos = pin->GetReal("hydro", "gamma");
-    rho_amb = pin->GetReal("problem", "rho_amb");  // density of the ambiant medium
-    p_amb = pin->GetReal("problem", "p_amb");      // pressure of the ambiant medium
+    rho_amb = pin->GetReal("problem", "rho_amb");  // density of the ambient medium
+    cs_amb = pin->GetReal("problem", "cs_amb");    // pressure of the ambient medium
+    p_amb = cs_amb * cs_amb * rho_amb / gamma_eos;
 
     // read binary orbit parameters from the input file
     a_binary = pin->GetReal("problem", "a_binary");  // semi-major axis of the binary system
@@ -122,47 +148,57 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     // read wind parameters from the input file
 
     // solar wind parameters
+
     R_w_s = pin->GetReal("problem", "R_w_s");    // winding launch radius
     v_w_s = pin->GetReal("problem", "v_w_s");    // velocity of the wind at wind launch surface
+    cs_w_s = pin->GetReal("problem", "cs_w_s");  // sound speed of the wind at the wind launch surface
     Mdot_s = pin->GetReal("problem", "Mdot_s");  //
-    //p_w_s = pin->GetReal("problem", "p_w_s");    // pressure of the wind from the star
     B_star = pin->GetReal("problem", "B_star");  // magnetic field of the star at the wind launch surface R_w_s
 
     // pulsar wind parameters
-    pulsar_wind = pin->GetBoolean("problem", "pulsar_wind");        // if the pulsar wind is enabled
-    R_w_NS = pin->GetReal("problem", "R_w_NS");                     // radius of the NS wind launch surface
-    double gamma_v_w_NS = pin->GetReal("problem", "gamma_v_w_NS");  // velocity of the wind from the NS
-    //p_w_NS = pin->GetReal("problem", "p_w_NS");                     // pressure of the wind from the NS
+    pulsar_wind = pin->GetBoolean("problem", "pulsar_wind");  // if the pulsar wind is enabled
+    R_w_NS = pin->GetReal("problem", "R_w_NS");               // radius of the NS wind launch surface
+    v_w_NS = pin->GetReal("problem", "v_w_NS");               // velocity of the wind from the NS
+    cs_w_NS = pin->GetReal("problem", "cs_w_NS");             // sound speed of the wind from the NS
     sigma_NS = pin->GetReal("problem", "sigma_NS");
     B_NS = pin->GetReal("problem", "B_NS");  // magnetic field of the NS at the wind launch surface R_w_NS
 
     // calculate solar wind parameters
     rho_w_s = Mdot_s / (4 * PI * R_w_s * R_w_s * v_w_s);  //
-    p_w_s = p_amb;
-    double gamma_w_s = 1 / sqrt(1 - v_w_s * v_w_s);       // Lorentz factor of the solar wind
-    double L_w_s_matter = 0.5 * rho_w_s * v_w_s * v_w_s * 4 * pi * R_w_s * R_w_s *
-                          v_w_s;             // matter luminosity of the wind from the star
-    double L_w_s_magnetic = B_star * B_star;  // magnetic luminosity of the wind from the star
+    p_w_s = cs_w_s * cs_w_s * rho_w_s / gamma_eos;
 
     // calculate the pulsar wind parameters
-    v_w_NS = sqrt(1 - 1 / gamma_v_w_NS / gamma_v_w_NS);  // velocity of the pulsar wind at wind lauching surface
-    rho_w_NS = B_NS * B_NS / sigma_NS / gamma_v_w_NS /
-               gamma_v_w_NS;  // density of the pulsar wind at the wind launching surface
-    p_w_NS = p_amb;
-    double L_w_NS_matter = gamma_v_w_NS * gamma_v_w_NS * rho_w_NS * 4 * pi * R_w_NS * R_w_NS *
-                           v_w_NS;         // matter luminosity of the wind from the NS
-    double L_w_NS_magnetic = B_NS * B_NS;  // magnetic luminosity of the wind from the NS
 
-    std::cout << "rho_w_NS / gamma_v_w_NS / v_w_NS" << rho_w_NS << "/"
-              << gamma_v_w_NS << "/" << v_w_NS << std::endl;
-    std::cout << "Luminosity of the solar wind (tot/matter/magnetic): " << L_w_s_matter + L_w_s_magnetic << "/"
-              << L_w_s_matter << "/" << L_w_s_magnetic << std::endl;
-    std::cout << "Luminosity of the pulsar wind (tot/matter/magnetic) " << L_w_NS_matter + L_w_NS_magnetic << "/"
-              << L_w_NS_matter << "/" << L_w_NS_magnetic << std::endl;
+    // sigma = (B^2/2 + P_mag)/(e_i+e_k+p_g) = B^2/(p_g/(gamma_eos-1) + 0.5*rho*v^2 + p_g)
+    rho_w_NS = B_NS * B_NS / sigma_NS / (cs_w_NS * cs_w_NS / (gamma_eos - 1) + 0.5 * v_w_NS * v_w_NS);
+    p_w_NS = cs_w_NS * cs_w_NS * rho_w_NS / gamma_eos;
 
+    // calculate & print the wind info
+    std::cout << "Printing info in code unit\n";
+    double v_orb = elliptic_orbit_v(m_star + m_NS, e_binary, a_binary);
+    std::cout << " -Orbital velocity: " << v_orb << "\n";
+    std::cout << " -Ambient density:  " << rho_amb << "\n";
+    std::cout << " -Ambient sound speed: " << cs_amb << "\n\n";
+
+    double ei_w_s = p_w_s / (gamma_eos - 1);        // internal energy density of the wind from the star
+    double ek_w_s = 0.5 * rho_w_s * v_w_s * v_w_s;  // kinetic energy density of the wind from the star
+    double eB_w_s = B_star * B_star / 2;            // magnetic energy density of the wind from the star
+    double S_w_s = 4 * pi * R_w_s * R_w_s;          //  launch surface area of the wind from the star
+
+    double ei_w_NS = p_w_NS / (gamma_eos - 1);          // internal energy of the wind from the NS
+    double ek_w_NS = 0.5 * rho_w_NS * v_w_NS * v_w_NS;  // kinetic energy of the wind from the NS
+    double eB_w_NS = B_NS * B_NS / 2;                   // magnetic energy of the wind from the NS
+    double S_w_NS = 4 * pi * R_w_NS * R_w_NS;           //  launch surface area of the wind from the NS
+
+    double L_s =
+        print_wind_info("Stellar Wind", ei_w_s, ek_w_s, eB_w_s, p_w_s, S_w_s, v_w_s, rho_w_s, cs_w_s, B_star, R_w_s);
+    if (pulsar_wind) {
+        double L_NS = print_wind_info("Pulsar Wind", ei_w_NS, ek_w_NS, eB_w_NS, p_w_NS, S_w_NS, v_w_NS, rho_w_NS,
+                                      cs_w_NS, B_NS, R_w_NS);
+        std::cout << " -Wind Luminosity Ratio (pulsar/stellar): " << L_NS / L_s << std::endl;
+    }
     // set the source function
     EnrollUserExplicitSourceFunction(BinarySrc);
-
     return;
 }
 
@@ -195,8 +231,6 @@ void UpdateSrc(MeshBlock *pmb, const Real time, const Real dt, AthenaArray<Real>
     double x_s = 0, y_s = 0, vx_s = 0, vy_s = 0, x_NS = 0, y_NS = 0, vx_NS = 0, vy_NS = 0;
     get_orbit_info(time, x_s, y_s, vx_s, vy_s, x_NS, y_NS, vx_NS, vy_NS);
 
-    auto f = [](int i, int j, int k, double v_wind, double x, double y, double vx, double vy) -> Real { return 0; };
-
     for (int k = pmb->ks; k <= pmb->ke; ++k) {
         for (int j = pmb->js; j <= pmb->je; ++j) {
             for (int i = pmb->is; i <= pmb->ie; ++i) {
@@ -216,13 +250,12 @@ void UpdateSrc(MeshBlock *pmb, const Real time, const Real dt, AthenaArray<Real>
                     double vy_ = (v_wind * (y - y_s) / r2s + vy_s);
                     double vz_ = (v_wind * z / r2s);
 
-                    cons(IDN, k, j, i) = rho_w_s;                   // density
-                    cons(IM1, k, j, i) = rho_w_s * vx_;             // momentum x
-                    cons(IM2, k, j, i) = rho_w_s * vy_;             // momentum y
-                    cons(IM3, k, j, i) = rho_w_s * vz_;             // momentum z
-                    cons(IEN, k, j, i) = 
-                        p_w_s / (gamma_eos - 1) + 0.5 * rho_w_s * (vx_ * vx_ + vy_ * vy_ + vz_ * vz_); // Energy
-
+                    cons(IDN, k, j, i) = rho_w_s;        // density
+                    cons(IM1, k, j, i) = rho_w_s * vx_;  // momentum x
+                    cons(IM2, k, j, i) = rho_w_s * vy_;  // momentum y
+                    cons(IM3, k, j, i) = rho_w_s * vz_;  // momentum z
+                    cons(IEN, k, j, i) =
+                        p_w_s / (gamma_eos - 1) + 0.5 * rho_w_s * (vx_ * vx_ + vy_ * vy_ + vz_ * vz_);  // Energy
                 }
 
                 if (pulsar_wind && r2NS < R_w_NS) {
@@ -233,13 +266,13 @@ void UpdateSrc(MeshBlock *pmb, const Real time, const Real dt, AthenaArray<Real>
                     double vx_ = (v_wind * (x - x_NS) / r2NS + vx_NS);
                     double vy_ = (v_wind * (y - y_NS) / r2NS + vy_NS);
                     double vz_ = (v_wind * z / r2NS);
-                
-                    cons(IDN, k, j, i) = rho_w_NS;                     // density
-                    cons(IM1, k, j, i) = rho_w_NS * vx_;               // momentum x
-                    cons(IM2, k, j, i) = rho_w_NS * vy_;               // momentum y
-                    cons(IM3, k, j, i) = rho_w_NS * vz_;               // momentum z
-                    cons(IEN, k, j, i) = 
-                        p_w_s / (gamma_eos - 1) + 0.5 * rho_w_s * (vx_ * vx_ + vy_ * vy_ + vz_ * vz_); // Energy
+
+                    cons(IDN, k, j, i) = rho_w_NS;        // density
+                    cons(IM1, k, j, i) = rho_w_NS * vx_;  // momentum x
+                    cons(IM2, k, j, i) = rho_w_NS * vy_;  // momentum y
+                    cons(IM3, k, j, i) = rho_w_NS * vz_;  // momentum z
+                    cons(IEN, k, j, i) =
+                        p_w_NS / (gamma_eos - 1) + 0.5 * rho_w_NS * (vx_ * vx_ + vy_ * vy_ + vz_ * vz_);  // Energy
                 }
 
                 // gravity of the star
@@ -259,6 +292,7 @@ void UpdateSrc(MeshBlock *pmb, const Real time, const Real dt, AthenaArray<Real>
     }
     return;
 }
+
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     // set the initial condition of the ambiant medium
     for (int k = ks; k <= ke; k++) {
@@ -268,7 +302,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                 phydro->u(IM1, k, j, i) = 0.0;
                 phydro->u(IM2, k, j, i) = 0.0;
                 phydro->u(IM3, k, j, i) = 0.0;
-                phydro->u(IEN, k, j, i) = rho_amb + gamma_eos / (gamma_eos - 1) * p_amb - p_amb;
+                phydro->u(IEN, k, j, i) = p_amb / (gamma_eos - 1);
             }
         }
     }
@@ -279,13 +313,28 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     if (MAGNETIC_FIELDS_ENABLED) {
         // Star magnetic field
         SetBfield(this, pcoord, pfield->b, is, ie, js, je, ks, ke, x_s, y_s, R_w_s, B_star, NGHOST);
-        //pfield->CalculateCellCenteredField(pfield->b, pfield->bcc, pcoord, is, ie, js, je, ks, ke);
-        // NS magnetic field
-        SetBfield(this, pcoord, pfield->b, is, ie, js, je, ks, ke, x_NS, y_NS, R_w_NS, B_NS, NGHOST);
+        //  NS magnetic field
+        if (pulsar_wind) {
+            SetBfield(this, pcoord, pfield->b, is, ie, js, je, ks, ke, x_NS, y_NS, R_w_NS, B_NS, NGHOST);
+        }
         pfield->CalculateCellCenteredField(pfield->b, pfield->bcc, pcoord, is, ie, js, je, ks, ke);
     }
 
+    // set the initial condition of the wind
     UpdateSrc(this, 0, 0, phydro->u, pfield->bcc);
+
+    // add magnetic field contribution to the energy // previously we did this in the source function
+    // if you forget to do this, the primitive variables derived from the conserved variables will be wrong
+    for (int k = ks; k <= ke; k++) {
+        for (int j = js; j <= je; j++) {
+            for (int i = is; i <= ie; i++) {
+                double Bx = pfield->b.x1f(k, j, i);
+                double By = pfield->b.x2f(k, j, i);
+                double Bz = pfield->b.x3f(k, j, i);
+                phydro->u(IEN, k, j, i) += 0.5 * (Bx * Bx + By * By + Bz * Bz);
+            }
+        }
+    }
 }
 
 void BinarySrc(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Real> &prim,
