@@ -156,10 +156,12 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     B_star = pin->GetReal("problem", "B_star");  // magnetic field of the star at the wind launch surface R_w_s
 
     // pulsar wind parameters
+
     pulsar_wind = pin->GetBoolean("problem", "pulsar_wind");  // if the pulsar wind is enabled
     R_w_NS = pin->GetReal("problem", "R_w_NS");               // radius of the NS wind launch surface
     v_w_NS = pin->GetReal("problem", "v_w_NS");               // velocity of the wind from the NS
     cs_w_NS = pin->GetReal("problem", "cs_w_NS");             // sound speed of the wind from the NS
+
     sigma_NS = pin->GetReal("problem", "sigma_NS");
     B_NS = pin->GetReal("problem", "B_NS");  // magnetic field of the NS at the wind launch surface R_w_NS
 

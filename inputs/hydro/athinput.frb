@@ -4,11 +4,15 @@ configure = --prob=frb -b -s
 
 <job>
 problem_id = frb      # problem ID: basename of output filenames
-    
+
 <output1>
 file_type  = vtk       # Binary data dump
 variable   = prim      # variables to be output
+<<<<<<< HEAD
 dt         = 1e-3  # time increment between outputs
+=======
+dt         = 0.01  # time increment between outputs
+>>>>>>> 6e48c182b000e44652ee90bae8e279aa8c667e99
 
 <time>
 cfl_number = 0.3        # The Courant, Friedrichs, & Lewy (CFL) Number
