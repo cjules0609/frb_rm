@@ -156,12 +156,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     B_star = pin->GetReal("problem", "B_star");  // magnetic field of the star at the wind launch surface R_w_s
 
     // pulsar wind parameters
-
     pulsar_wind = pin->GetBoolean("problem", "pulsar_wind");  // if the pulsar wind is enabled
     R_w_NS = pin->GetReal("problem", "R_w_NS");               // radius of the NS wind launch surface
     v_w_NS = pin->GetReal("problem", "v_w_NS");               // velocity of the wind from the NS
     cs_w_NS = pin->GetReal("problem", "cs_w_NS");             // sound speed of the wind from the NS
-
     sigma_NS = pin->GetReal("problem", "sigma_NS");
     B_NS = pin->GetReal("problem", "B_NS");  // magnetic field of the NS at the wind launch surface R_w_NS
 
@@ -197,6 +195,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     if (pulsar_wind) {
         double L_NS = print_wind_info("Pulsar Wind", ei_w_NS, ek_w_NS, eB_w_NS, p_w_NS, S_w_NS, v_w_NS, rho_w_NS,
                                       cs_w_NS, B_NS, R_w_NS);
+
         std::cout << " -Wind Luminosity Ratio (pulsar/stellar): " << L_NS / L_s << std::endl;
     }
     // set the source function

@@ -70,7 +70,7 @@ Mdot_s = convert_dm(_Mdot_s)
 def convert_v(_v): return _v/v_u
 
 
-_v_w_s = 3e7  # 0.001c
+_v_w_s = 3e8  # 0.01c
 v_w_s = convert_v(_v_w_s)  # stellar wind speed at the surface of the star
 
 # LUMINOSITY
