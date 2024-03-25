@@ -6,7 +6,7 @@ configure = --prob=frb -b -s
 problem_id = frb      # problem ID: basename of output filenames
 
 <output1>
-file_type  = vtk       # Binary data dump
+file_type  = hdf5       # Binary data dump
 variable   = prim      # variables to be output
 dt         = 1e-3  # time increment between outputs
 
@@ -38,6 +38,11 @@ x3min      = -1        # minimum value of X3
 x3max      =  1       # maximum value of X3
 ix3_bc     = periodic         # inner-X3 boundary flag
 ox3_bc     = periodic        # outer-X3 boundary flag 
+
+<meshblock>
+nx1     =    64
+nx2     =    64
+nx3     =    1
 
 #num_threads = 96
 
