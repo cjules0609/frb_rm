@@ -362,6 +362,7 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
                 a1(k, j, i) = A1(pco->x1v(i), pco->x2f(j), pco->x3f(k), x_offset, y_offset, R, B);
                 a2(k, j, i) = A2(pco->x1f(i), pco->x2v(j), pco->x3f(k), x_offset, y_offset, R, B);
                 a3(k, j, i) = A3(pco->x1f(i), pco->x2f(j), pco->x3v(k));
+                
             }
         }
     }
@@ -404,6 +405,8 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
                 pco->Edge3Length(k, j + 1, is, ie + 1, len_p1);
                 for (int i = is; i <= ie + 1; ++i) {
                     b.x1f(k, j, i) += (len_p1(i) * a3(k, j + 1, i) - len(i) * a3(k, j, i)) / area(i);
+
+                    
                 }
             }
         }
@@ -417,6 +420,7 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
                 }
             }
         }
+        
     }
     // for 3D only
     if (pmb->block_size.nx3 > 1) {
@@ -444,6 +448,7 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
             }
         }
     }
+
     return;
 }
 
