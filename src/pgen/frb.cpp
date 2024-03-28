@@ -38,8 +38,8 @@ double p_amb = 0.0;
 // orbital parameters
 double m_star = 0.0;
 double m_NS = 0.0;
-double R_s = 0.0;
-double R_NS = 0.0;
+// double R_s = 0.0;
+// double R_NS = 0.0;
 double a_binary = 0.0;
 double e_binary = 0.0;
 
@@ -51,6 +51,8 @@ double p_w_s = 0.0;
 double cs_w_s = 0.0;
 double B_star = 0.0;
 double Mdot_s = 0.0;
+double m_theta_s = 0.0;
+double m_phi_s = 0.0;
 
 // pulsar wind parameters
 bool pulsar_wind = false;
@@ -61,6 +63,8 @@ double p_w_NS = 0.0;
 double cs_w_NS = 0.0;
 double B_NS = 0;
 double sigma_NS = 0;
+double m_theta_NS = 0.0;
+double m_phi_NS = 0.0;
 
 double pi = 3.14159265358979311599796346854;
 
@@ -108,7 +112,7 @@ static Real A2(const Real x1, const Real x2, const Real x3, double x_offset, dou
 static Real A3(const Real x1, const Real x2, const Real x3);
 
 void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, int js, int je, int ks, int ke,
-               double x_offset, double y_offset, double R, double B, int ngh);
+               double x_offset, double y_offset, double R, double B, double m_theta, double m_phi, int ngh);
 
 double print_wind_info(std::string name, double ei, double ek, double eB, double p_g, double S, double v, double rho,
                        double cs, double B, double R_w) {
@@ -146,26 +150,30 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     e_binary = pin->GetReal("problem", "e_binary");  // eccentricity of the binary system
     m_star = pin->GetReal("problem", "m_star");      // mass of the star
     m_NS = pin->GetReal("problem", "m_NS");          // mass of the NS
-    R_s = pin->GetReal("problem", "R_s"); 
-    R_NS = pin->GetReal("problem", "R_NS"); 
+    // R_s = pin->GetReal("problem", "R_s"); 
+    // R_NS = pin->GetReal("problem", "R_NS"); 
 
     // read wind parameters from the input file
 
     // solar wind parameters
 
-    R_w_s = pin->GetReal("problem", "R_w_s");    // winding launch radius
-    v_w_s = pin->GetReal("problem", "v_w_s");    // velocity of the wind at wind launch surface
-    cs_w_s = pin->GetReal("problem", "cs_w_s");  // sound speed of the wind at the wind launch surface
-    Mdot_s = pin->GetReal("problem", "Mdot_s");  //
-    B_star = pin->GetReal("problem", "B_star");  // magnetic field of the star at the wind launch surface R_w_s
+    R_w_s = pin->GetReal("problem", "R_w_s");           // winding launch radius
+    v_w_s = pin->GetReal("problem", "v_w_s");           // velocity of the wind at wind launch surface
+    cs_w_s = pin->GetReal("problem", "cs_w_s");         // sound speed of the wind at the wind launch surface
+    Mdot_s = pin->GetReal("problem", "Mdot_s");         //
+    B_star = pin->GetReal("problem", "B_star");         // magnetic field of the star at the wind launch surface R_w_s
+    m_theta_s = pin->GetReal("problem", "m_theta_s");   // star magnetic moment angle x2-x3 plane
+    m_phi_s = pin->GetReal("problem", "m_phi_s");       // star magnetic moment angle x1-x2 plane
 
     // pulsar wind parameters
-    pulsar_wind = pin->GetBoolean("problem", "pulsar_wind");  // if the pulsar wind is enabled
-    R_w_NS = pin->GetReal("problem", "R_w_NS");               // radius of the NS wind launch surface
-    v_w_NS = pin->GetReal("problem", "v_w_NS");               // velocity of the wind from the NS
-    cs_w_NS = pin->GetReal("problem", "cs_w_NS");             // sound speed of the wind from the NS
+    pulsar_wind = pin->GetBoolean("problem", "pulsar_wind");    // if the pulsar wind is enabled
+    R_w_NS = pin->GetReal("problem", "R_w_NS");                 // radius of the NS wind launch surface
+    v_w_NS = pin->GetReal("problem", "v_w_NS");                 // velocity of the wind from the NS
+    cs_w_NS = pin->GetReal("problem", "cs_w_NS");               // sound speed of the wind from the NS
     sigma_NS = pin->GetReal("problem", "sigma_NS");
-    B_NS = pin->GetReal("problem", "B_NS");  // magnetic field of the NS at the wind launch surface R_w_NS
+    B_NS = pin->GetReal("problem", "B_NS");                     // magnetic field of the NS at the wind launch surface R_w_NS
+    m_theta_NS = pin->GetReal("problem", "m_theta_NS");           // NS magnetic moment angle x2-x3 plane
+    m_phi_NS = pin->GetReal("problem", "m_phi_NS");               // NS magnetic moment angle x1-x2 plane
 
     // calculate solar wind parameters
     rho_w_s = Mdot_s / (4 * PI * R_w_s * R_w_s * v_w_s);  //
@@ -317,10 +325,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
     if (MAGNETIC_FIELDS_ENABLED) {
         // Star magnetic field
-        SetBfield(this, pcoord, pfield->b, is, ie, js, je, ks, ke, x_s, y_s, R_w_s, B_star, NGHOST);
+        SetBfield(this, pcoord, pfield->b, is, ie, js, je, ks, ke, x_s, y_s, R_w_s, B_star, m_theta_s, m_phi_s, NGHOST);
         //  NS magnetic field
         if (pulsar_wind) {
-            SetBfield(this, pcoord, pfield->b, is, ie, js, je, ks, ke, x_NS, y_NS, R_w_NS, B_NS, NGHOST);
+            SetBfield(this, pcoord, pfield->b, is, ie, js, je, ks, ke, x_NS, y_NS, R_w_NS, B_NS, m_theta_NS, m_phi_NS, NGHOST);
         }
         pfield->CalculateCellCenteredField(pfield->b, pfield->bcc, pcoord, is, ie, js, je, ks, ke);
     }
@@ -349,15 +357,26 @@ void BinarySrc(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray
 }
 
 void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, int js, int je, int ks, int ke,
-               double x_offset, double y_offset, double R, double B, int ngh) {
+               double x_offset, double y_offset, double R, double B, double m_theta, double m_phi, int ngh) {
     BoundaryValues *pbval = pmb->pbval;
     AthenaArray<Real> a1, a2, a3;
+    AthenaArray<Real> a1_, a2_, a3_;
+    AthenaArray<Real> a1__, a2__, a3__;
     int nx1 = pmb->block_size.nx1 + 2 * ngh + 1;
     int nx2 = pmb->block_size.nx2 + 2 * ngh + 1;
     int nx3 = pmb->block_size.nx3 + 2 * ngh + 1;
     a1.NewAthenaArray(nx3, nx2, nx1);
     a2.NewAthenaArray(nx3, nx2, nx1);
     a3.NewAthenaArray(nx3, nx2, nx1);
+
+    a1_.NewAthenaArray(nx3, nx2, nx1);
+    a2_.NewAthenaArray(nx3, nx2, nx1);
+    a3_.NewAthenaArray(nx3, nx2, nx1);
+
+    a1__.NewAthenaArray(nx3, nx2, nx1);
+    a2__.NewAthenaArray(nx3, nx2, nx1);
+    a3__.NewAthenaArray(nx3, nx2, nx1);
+
 
     int level = pmb->loc.level;
     for (int k = ks; k <= ke + 1; k++) {
@@ -366,7 +385,16 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
                 a1(k, j, i) = A1(pco->x1v(i), pco->x2f(j), pco->x3f(k), x_offset, y_offset, R, B);
                 a2(k, j, i) = A2(pco->x1f(i), pco->x2v(j), pco->x3f(k), x_offset, y_offset, R, B);
                 a3(k, j, i) = A3(pco->x1f(i), pco->x2f(j), pco->x3v(k));
-                
+
+                // rotation by theta
+                a1_(k,j,i) = a1(k,j,i);
+                a2_(k,j,i) = cos(m_theta) * a2(k,j,i) - sin(m_theta) * a3(k,j,i);
+                a3_(k,j,i) = sin(m_theta) * a2(k,j,i) + cos(m_theta) * a3(k,j,i);
+
+                // rotation by phi
+                a1__(k,j,i) = cos(m_phi) * a1_(k,j,i) - sin(m_phi) * a2_(k,j,i) ;
+                a2__(k,j,i) = sin(m_phi) * a1_(k,j,i) + cos(m_phi) * a2_(k,j,i);
+                a3__(k,j,i) = a3_(k,j,i);
             }
         }
     }
@@ -386,7 +414,7 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
             pco->Edge3Length(k, j, is, ie + 1, len);
             for (int i = is; i <= ie; ++i) {
                 area(i) = (area(i) < real_min) ? real_min : area(i);
-                b.x2f(k, j, i) += -1.0 * (len(i + 1) * a3(k, j, i + 1) - len(i) * a3(k, j, i)) / area(i);
+                b.x2f(k, j, i) += -1.0 * (len(i + 1) * a3__(k, j, i + 1) - len(i) * a3__(k, j, i)) / area(i);
             }
         }
     }
@@ -395,7 +423,7 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
             pco->Face3Area(k, j, is, ie, area);
             pco->Edge2Length(k, j, is, ie + 1, len);
             for (int i = is; i <= ie; ++i) {
-                b.x3f(k, j, i) += (len(i + 1) * a2(k, j, i + 1) - len(i) * a2(k, j, i)) / area(i);
+                b.x3f(k, j, i) += (len(i + 1) * a2__(k, j, i + 1) - len(i) * a2__(k, j, i)) / area(i);
             }
         }
     }
@@ -408,7 +436,7 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
                 pco->Edge3Length(k, j, is, ie + 1, len);
                 pco->Edge3Length(k, j + 1, is, ie + 1, len_p1);
                 for (int i = is; i <= ie + 1; ++i) {
-                    b.x1f(k, j, i) += (len_p1(i) * a3(k, j + 1, i) - len(i) * a3(k, j, i)) / area(i);
+                    b.x1f(k, j, i) += (len_p1(i) * a3__(k, j + 1, i) - len(i) * a3__(k, j, i)) / area(i);
 
                     
                 }
@@ -420,7 +448,7 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
                 pco->Edge1Length(k, j, is, ie, len);
                 pco->Edge1Length(k, j + 1, is, ie, len_p1);
                 for (int i = is; i <= ie; ++i) {
-                    b.x3f(k, j, i) -= (len_p1(i) * a1(k, j + 1, i) - len(i) * a1(k, j, i)) / area(i);
+                    b.x3f(k, j, i) -= (len_p1(i) * a1__(k, j + 1, i) - len(i) * a1__(k, j, i)) / area(i);
                 }
             }
         }
@@ -434,7 +462,7 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
                 pco->Edge2Length(k, j, is, ie + 1, len);
                 pco->Edge2Length(k + 1, j, is, ie + 1, len_p1);
                 for (int i = is; i <= ie + 1; ++i) {
-                    b.x1f(k, j, i) -= (len_p1(i) * a2(k + 1, j, i) - len(i) * a2(k, j, i)) / area(i);
+                    b.x1f(k, j, i) -= (len_p1(i) * a2__(k + 1, j, i) - len(i) * a2__(k, j, i)) / area(i);
                 }
             }
         }
@@ -447,7 +475,7 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
                 pco->Edge1Length(k + 1, j, is, ie, len_p1);
                 for (int i = is; i <= ie; ++i) {
                     area(i) = (area(i) < real_min) ? real_min : area(i);
-                    b.x2f(k, j, i) += (len_p1(i) * a1(k + 1, j, i) - len(i) * a1(k, j, i)) / area(i);
+                    b.x2f(k, j, i) += (len_p1(i) * a1__(k + 1, j, i) - len(i) * a1__(k, j, i)) / area(i);
                 }
             }
         }
