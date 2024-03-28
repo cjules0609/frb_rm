@@ -38,6 +38,8 @@ double p_amb = 0.0;
 // orbital parameters
 double m_star = 0.0;
 double m_NS = 0.0;
+double R_s = 0.0;
+double R_NS = 0.0;
 double a_binary = 0.0;
 double e_binary = 0.0;
 
@@ -144,6 +146,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     e_binary = pin->GetReal("problem", "e_binary");  // eccentricity of the binary system
     m_star = pin->GetReal("problem", "m_star");      // mass of the star
     m_NS = pin->GetReal("problem", "m_NS");          // mass of the NS
+    R_s = pin->GetReal("problem", "R_s"); 
+    R_NS = pin->GetReal("problem", "R_NS"); 
 
     // read wind parameters from the input file
 

@@ -72,6 +72,8 @@ def convert_v(_v): return _v/v_u
 
 _v_w_s = 3e8  # 0.01c
 v_w_s = convert_v(_v_w_s)  # stellar wind speed at the surface of the star
+_v_w_NS = 2.6e10  # 0.01c
+v_w_NS = convert_v(_v_w_NS)  # stellar wind speed at the surface of the star
 
 # LUMINOSITY
 
@@ -109,6 +111,7 @@ unit_list = [
     'm_NS: '+str(m_NS),
     'Mdot_s: '+str(Mdot_s),
     'v_w_s: '+str(v_w_s),
+    'v_w_NS '+str(v_w_NS),
     'L_w_NS: '+str(L_w_NS),
     'B_star: '+str(B_star),
     'B_NS: '+str(B_NS)

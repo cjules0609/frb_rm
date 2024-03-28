@@ -60,18 +60,20 @@ a_binary = 0.23333
 e_binary = 0
 
 m_star = 15 # m_sun
+R_s = 0.0047
 R_w_s = 0.04666 #(wind-launchiung surface NOT the radius of the star)
 Mdot_s = 1.58e-7  
 v_w_s = 100  # stellar wind speed at the surface of the star
 cs_w_s = 0.1  # sound speed in the wind
-B_star = 4.3e-5 # magnetic field strength at the `launching` surface NOT at the surface of the star
+B_star = 4.3560173962258115e-05 # magnetic field strength at the surface of the star
 
 
 m_NS = 1.4
+R_NS = 6.67e-9
 R_w_NS = 0.04666
 
 pulsar_wind = 1
 v_w_NS = 100
 cs_w_NS = 0.1
-B_NS = 0.005 # magnetic field strength at the `launching` surface NOT at the surface of the NS 
+B_NS = 0.0008889831420869 # magnetic field strength at the surface of the NS
 sigma_NS = 10
