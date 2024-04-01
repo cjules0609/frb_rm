@@ -20,15 +20,15 @@ ncycle_out  = 10         # interval for stdout summary info
 
 <mesh>
 nx1        = 512       # Number of zones in X1-direction
-x1min      = -1    # minimum value of X1
-x1max      = 1     # maximum value of X1
+x1min      = -2    # minimum value of X1
+x1max      = 2     # maximum value of X1
 ix1_bc     = outflow   # inner-X1 boundary flag
 ox1_bc     = outflow    # outer-X1 boundary flag
 x1rat      = 1
 
 nx2        = 512               # Number of zones in X2-direction
-x2min      = -1                        # minimum value of X2
-x2max      = 1  	# maximum value of X2
+x2min      = -2                        # minimum value of X2
+x2max      = 2  	# maximum value of X2
 ix2_bc     = outflow             # inner-X2 boundary flag
 ox2_bc     = outflow              # outer-X2 boundary flag
 x2rat      = 1
@@ -65,8 +65,8 @@ R_w_s = 0.04666 #(wind-launchiung surface NOT the radius of the star)
 Mdot_s = 1.58e-7  
 v_w_s = 100  # stellar wind speed at the surface of the star
 cs_w_s = 0.1  # sound speed in the wind
-B_star = 0 # magnetic field strength at the surface of the star
-m_theta_s = 1.5708 # magnetic moment angle x2-x3 plane
+B_star = 4.3560173962258115e-05 # magnetic field strength at the surface of the star
+m_theta_s = 0 # magnetic moment angle x2-x3 plane
 m_phi_s = 0 # magnetic moment angle in x1-x2 plane
 
 m_NS = 1.4
@@ -79,4 +79,4 @@ cs_w_NS = 0.1
 B_NS = 0.0008889831420869 # magnetic field strength at the surface of the NS
 sigma_NS = 10
 m_theta_NS = 1.57079632679 # magnetic moment angle x2-x3 plane
-m_phi_NS = 0 # magnetic moment angle in x1-x2 plane
+m_phi_NS = 1.57079632679 # magnetic moment angle in x1-x2 plane

@@ -448,6 +448,7 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
                 pco->Edge1Length(k, j, is, ie, len);
                 pco->Edge1Length(k, j + 1, is, ie, len_p1);
                 for (int i = is; i <= ie; ++i) {
+                    // non-zero z comes from this
                     b.x3f(k, j, i) -= (len_p1(i) * a1__(k, j + 1, i) - len(i) * a1__(k, j, i)) / area(i);
                 }
             }
