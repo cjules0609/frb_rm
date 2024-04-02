@@ -78,5 +78,5 @@ v_w_NS = 100
 cs_w_NS = 0.1
 B_NS = 0.0008889831420869 # magnetic field strength at the surface of the NS
 sigma_NS = 10
-m_theta_NS = 1.57079632679 # magnetic moment angle x2-x3 plane
-m_phi_NS = 1.57079632679 # magnetic moment angle in x1-x2 plane
+m_theta_NS = 1.5707963267948966192313216916397514420985846996875529104874722961  # magnetic moment angle x2-x3 plane
+m_phi_NS = 1.5707963267948966192313216916397514420985846996875529104874722961 # magnetic moment angle in x1-x2 plane

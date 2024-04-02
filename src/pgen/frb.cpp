@@ -105,11 +105,11 @@ double v_to_gamma(double v) { return 1 / sqrt(1 - v * v / 3e10 / 3e10); }
 
 double gamma_to_v(double gamma) { return 3e10 * sqrt(1 - (1 / gamma) * (1 / gamma)); }
 
-static Real A1(const Real x1, const Real x2, const Real x3, double x_offset, double y_offset, double R, double B);
+static Real A1(const Real x1, const Real x2, const Real x3, double x_offset, double y_offset, double R, double m_x, double m_y, double m_z);
 
-static Real A2(const Real x1, const Real x2, const Real x3, double x_offset, double y_offset, double R, double B);
+static Real A2(const Real x1, const Real x2, const Real x3, double x_offset, double y_offset, double R, double m_x, double m_y, double m_z);
 
-static Real A3(const Real x1, const Real x2, const Real x3);
+static Real A3(const Real x1, const Real x2, const Real x3, double x_offset, double y_offset, double R, double m_x, double m_y, double m_z);
 
 void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, int js, int je, int ks, int ke,
                double x_offset, double y_offset, double R, double B, double m_theta, double m_phi, int ngh);
@@ -298,8 +298,6 @@ void UpdateSrc(MeshBlock *pmb, const Real time, const Real dt, AthenaArray<Real>
                 cons(IM2, k, j, i) -= dt * cons(IDN, k, j, i) * m_NS * (y - y_NS) / (r2NS * r2NS * r2NS);  // momentum y
                 cons(IM3, k, j, i) -= dt * cons(IDN, k, j, i) * m_NS * z / (r2NS * r2NS * r2NS);
 
-                // std::cout << "Dens: " << cons(IDN, k, j, i) << std::endl;
-                // std::cout << "Momentum(x): " << cons(IM1, k, j, i) << std::endl;
             }
         }
     }
@@ -336,8 +334,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     // set the initial condition of the wind
     UpdateSrc(this, 0, 0, phydro->u, pfield->bcc);
 
-    // add magnetic field contribution to the energy // previously we did this in the source function
-    // if you forget to do this, the primitive variables derived from the conserved variables will be wrong
     for (int k = ks; k <= ke; k++) {
         for (int j = js; j <= je; j++) {
             for (int i = is; i <= ie; i++) {
@@ -360,8 +356,6 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
                double x_offset, double y_offset, double R, double B, double m_theta, double m_phi, int ngh) {
     BoundaryValues *pbval = pmb->pbval;
     AthenaArray<Real> a1, a2, a3;
-    AthenaArray<Real> a1_, a2_, a3_;
-    AthenaArray<Real> a1__, a2__, a3__;
     int nx1 = pmb->block_size.nx1 + 2 * ngh + 1;
     int nx2 = pmb->block_size.nx2 + 2 * ngh + 1;
     int nx3 = pmb->block_size.nx3 + 2 * ngh + 1;
@@ -369,32 +363,28 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
     a2.NewAthenaArray(nx3, nx2, nx1);
     a3.NewAthenaArray(nx3, nx2, nx1);
 
-    a1_.NewAthenaArray(nx3, nx2, nx1);
-    a2_.NewAthenaArray(nx3, nx2, nx1);
-    a3_.NewAthenaArray(nx3, nx2, nx1);
+    // magnetic moment
+    double m_x = 0.0;
+    double m_y = 0.0;
+    double m_z = B;
 
-    a1__.NewAthenaArray(nx3, nx2, nx1);
-    a2__.NewAthenaArray(nx3, nx2, nx1);
-    a3__.NewAthenaArray(nx3, nx2, nx1);
+    // rotation by theta
+    double m_x_ = m_x;
+    double m_y_ = cos(m_theta) * m_y - sin(m_theta) * m_z;
+    double m_z_ = sin(m_theta) * m_y + cos(m_theta) * m_z;
 
+    // rotation by phi
+    double m_x__ = cos(m_phi) * m_x_ - sin(m_phi) * m_y_;
+    double m_y__ = sin(m_phi) * m_x_ + cos(m_phi) * m_y_;
+    double m_z__ = m_z_;
 
     int level = pmb->loc.level;
     for (int k = ks; k <= ke + 1; k++) {
         for (int j = js; j <= je + 1; j++) {
             for (int i = is; i <= ie + 1; i++) {
-                a1(k, j, i) = A1(pco->x1v(i), pco->x2f(j), pco->x3f(k), x_offset, y_offset, R, B);
-                a2(k, j, i) = A2(pco->x1f(i), pco->x2v(j), pco->x3f(k), x_offset, y_offset, R, B);
-                a3(k, j, i) = A3(pco->x1f(i), pco->x2f(j), pco->x3v(k));
-
-                // rotation by theta
-                a1_(k,j,i) = a1(k,j,i);
-                a2_(k,j,i) = cos(m_theta) * a2(k,j,i) - sin(m_theta) * a3(k,j,i);
-                a3_(k,j,i) = sin(m_theta) * a2(k,j,i) + cos(m_theta) * a3(k,j,i);
-
-                // rotation by phi
-                a1__(k,j,i) = cos(m_phi) * a1_(k,j,i) - sin(m_phi) * a2_(k,j,i) ;
-                a2__(k,j,i) = sin(m_phi) * a1_(k,j,i) + cos(m_phi) * a2_(k,j,i);
-                a3__(k,j,i) = a3_(k,j,i);
+                a1(k, j, i) = A1(pco->x1v(i), pco->x2f(j), pco->x3f(k), x_offset, y_offset, R, m_x__, m_y__, m_z__);
+                a2(k, j, i) = A2(pco->x1f(i), pco->x2v(j), pco->x3f(k), x_offset, y_offset, R, m_x__, m_y__, m_z__);
+                a3(k, j, i) = A3(pco->x1f(i), pco->x2f(j), pco->x3v(k), x_offset, y_offset, R, m_x__, m_y__, m_z__);
             }
         }
     }
@@ -414,7 +404,7 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
             pco->Edge3Length(k, j, is, ie + 1, len);
             for (int i = is; i <= ie; ++i) {
                 area(i) = (area(i) < real_min) ? real_min : area(i);
-                b.x2f(k, j, i) += -1.0 * (len(i + 1) * a3__(k, j, i + 1) - len(i) * a3__(k, j, i)) / area(i);
+                b.x2f(k, j, i) += -1.0 * (len(i + 1) * a3(k, j, i + 1) - len(i) * a3(k, j, i)) / area(i);
             }
         }
     }
@@ -423,7 +413,7 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
             pco->Face3Area(k, j, is, ie, area);
             pco->Edge2Length(k, j, is, ie + 1, len);
             for (int i = is; i <= ie; ++i) {
-                b.x3f(k, j, i) += (len(i + 1) * a2__(k, j, i + 1) - len(i) * a2__(k, j, i)) / area(i);
+                b.x3f(k, j, i) += (len(i + 1) * a2(k, j, i + 1) - len(i) * a2(k, j, i)) / area(i);
             }
         }
     }
@@ -436,7 +426,7 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
                 pco->Edge3Length(k, j, is, ie + 1, len);
                 pco->Edge3Length(k, j + 1, is, ie + 1, len_p1);
                 for (int i = is; i <= ie + 1; ++i) {
-                    b.x1f(k, j, i) += (len_p1(i) * a3__(k, j + 1, i) - len(i) * a3__(k, j, i)) / area(i);
+                    b.x1f(k, j, i) += (len_p1(i) * a3(k, j + 1, i) - len(i) * a3(k, j, i)) / area(i);
 
                     
                 }
@@ -449,7 +439,7 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
                 pco->Edge1Length(k, j + 1, is, ie, len_p1);
                 for (int i = is; i <= ie; ++i) {
                     // non-zero z comes from this
-                    b.x3f(k, j, i) -= (len_p1(i) * a1__(k, j + 1, i) - len(i) * a1__(k, j, i)) / area(i);
+                    b.x3f(k, j, i) -= (len_p1(i) * a1(k, j + 1, i) - len(i) * a1(k, j, i)) / area(i);
                 }
             }
         }
@@ -463,7 +453,7 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
                 pco->Edge2Length(k, j, is, ie + 1, len);
                 pco->Edge2Length(k + 1, j, is, ie + 1, len_p1);
                 for (int i = is; i <= ie + 1; ++i) {
-                    b.x1f(k, j, i) -= (len_p1(i) * a2__(k + 1, j, i) - len(i) * a2__(k, j, i)) / area(i);
+                    b.x1f(k, j, i) -= (len_p1(i) * a2(k + 1, j, i) - len(i) * a2(k, j, i)) / area(i);
                 }
             }
         }
@@ -476,7 +466,7 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
                 pco->Edge1Length(k + 1, j, is, ie, len_p1);
                 for (int i = is; i <= ie; ++i) {
                     area(i) = (area(i) < real_min) ? real_min : area(i);
-                    b.x2f(k, j, i) += (len_p1(i) * a1__(k + 1, j, i) - len(i) * a1__(k, j, i)) / area(i);
+                    b.x2f(k, j, i) += (len_p1(i) * a1(k + 1, j, i) - len(i) * a1(k, j, i)) / area(i);
                 }
             }
         }
@@ -485,27 +475,35 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
     return;
 }
 
-static Real A1(const Real x1, const Real x2, const Real x3, double x_offset, double y_offset, double R, double B) {
+static Real A1(const Real x1, const Real x2, const Real x3, double x_offset, double y_offset, double R, double m_x, double m_y, double m_z) {
     Real a1 = 0.0;
     double x1c = x1 - x_offset;
     double x2c = x2 - y_offset;
     double x3c = x3 - 0;
     Real rc = std::max(sqrt(x1c * x1c + x2c * x2c + x3c * x3c), R / 2.);
-    a1 = B * R * R / rc / rc / rc * (-1. * x2c);
+    a1 = (m_y * x3c - m_z * x2c) * R * R / rc / rc ;
+    // a1 = B * R * R / rc / rc / rc * (-1. * x2c);
     return (a1);
 }
 
-static Real A2(const Real x1, const Real x2, const Real x3, double x_offset, double y_offset, double R, double B) {
+static Real A2(const Real x1, const Real x2, const Real x3, double x_offset, double y_offset, double R, double m_x, double m_y, double m_z) {
     Real a2 = 0.0;
     double x1c = x1 - x_offset;
     double x2c = x2 - y_offset;
     double x3c = x3 - 0;
     Real rc = std::max(sqrt(x1c * x1c + x2c * x2c + x3c * x3c), R / 2.);
-    a2 = B * R * R / rc / rc / rc * (1. * x1c);
+    a2 = (m_z * x1c - m_x * x3c) * R * R / rc / rc ;
+    // a2 = B * R * R / rc / rc / rc * (1. * x1c);
     return (a2);
 }
 
-static Real A3(const Real x1, const Real x2, const Real x3) {
+static Real A3(const Real x1, const Real x2, const Real x3, double x_offset, double y_offset, double R, double m_x, double m_y, double m_z) {
     Real a3 = 0.0;
+    double x1c = x1 - x_offset;
+    double x2c = x2 - y_offset;
+    double x3c = x3 - 0;
+    Real rc = std::max(sqrt(x1c * x1c + x2c * x2c + x3c * x3c), R / 2.);
+    a3 = (m_x * x2c - m_y * x1c) * R * R / rc / rc ;
+    // a3 = 0.0
     return (a3);
 }
