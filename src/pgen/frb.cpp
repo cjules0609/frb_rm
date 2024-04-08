@@ -326,7 +326,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         SetBfield(this, pcoord, pfield->b, is, ie, js, je, ks, ke, x_s, y_s, R_w_s, B_star, m_theta_s, m_phi_s, NGHOST);
         //  NS magnetic field
         if (pulsar_wind) {
-            SetBfield(this, pcoord, pfield->b, is, ie, js, je, ks, ke, x_NS, y_NS, R_w_NS, B_NS, m_theta_NS, m_phi_NS, NGHOST);
+            // SetBfield(this, pcoord, pfield->b, is, ie, js, je, ks, ke, x_NS, y_NS, R_w_NS, B_NS, m_theta_NS, m_phi_NS, NGHOST);
         }
         pfield->CalculateCellCenteredField(pfield->b, pfield->bcc, pcoord, is, ie, js, je, ks, ke);
     }
@@ -377,7 +377,7 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
     double m_x__ = cos(m_phi) * m_x_ - sin(m_phi) * m_y_;
     double m_y__ = sin(m_phi) * m_x_ + cos(m_phi) * m_y_;
     double m_z__ = m_z_;
-
+    // std::cout << "m_x/m_y/m_z" << m_x__ << "/" << m_y__ << "/" << m_z__ << std::endl;
     int level = pmb->loc.level;
     for (int k = ks; k <= ke + 1; k++) {
         for (int j = js; j <= je + 1; j++) {
@@ -481,7 +481,7 @@ static Real A1(const Real x1, const Real x2, const Real x3, double x_offset, dou
     double x2c = x2 - y_offset;
     double x3c = x3 - 0;
     Real rc = std::max(sqrt(x1c * x1c + x2c * x2c + x3c * x3c), R / 2.);
-    a1 = (m_y * x3c - m_z * x2c) * R * R / rc / rc ;
+    a1 = (m_y * x3c - m_z * x2c) * R * R / rc / rc / rc;
     // a1 = B * R * R / rc / rc / rc * (-1. * x2c);
     return (a1);
 }
@@ -492,7 +492,7 @@ static Real A2(const Real x1, const Real x2, const Real x3, double x_offset, dou
     double x2c = x2 - y_offset;
     double x3c = x3 - 0;
     Real rc = std::max(sqrt(x1c * x1c + x2c * x2c + x3c * x3c), R / 2.);
-    a2 = (m_z * x1c - m_x * x3c) * R * R / rc / rc ;
+    a2 = (m_z * x1c - m_x * x3c) * R * R / rc / rc / rc ;
     // a2 = B * R * R / rc / rc / rc * (1. * x1c);
     return (a2);
 }
@@ -503,7 +503,7 @@ static Real A3(const Real x1, const Real x2, const Real x3, double x_offset, dou
     double x2c = x2 - y_offset;
     double x3c = x3 - 0;
     Real rc = std::max(sqrt(x1c * x1c + x2c * x2c + x3c * x3c), R / 2.);
-    a3 = (m_x * x2c - m_y * x1c) * R * R / rc / rc ;
+    a3 = (m_x * x2c - m_y * x1c) * R * R / rc / rc / rc;
     // a3 = 0.0
     return (a3);
 }

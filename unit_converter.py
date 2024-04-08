@@ -49,7 +49,6 @@ R_w_NS = convert_l(_R_w_NS)
 
 def convert_m(_m): return _m/m_u
 
-
 _m_star = 3e34
 m_star = convert_m(_m_star)
 _m_NS = 2.8e33
@@ -57,15 +56,12 @@ m_NS = convert_m(_m_NS)
 
 # MASS LOSS
 
-
 def convert_dm(_dm): return _dm/dm_u
-
 
 _Mdot_s = 6.3e19
 Mdot_s = convert_dm(_Mdot_s)
 
 # VELOCITY
-
 
 def convert_v(_v): return _v/v_u
 
@@ -90,7 +86,7 @@ L_w_NS = convert_L(_L_w_NS)
 def convert_B(_B): return _B/B_u
 
 
-_B_star = 10 * (_R_s/_R_w_s)**2
+_B_star = 100 * (_R_s/_R_w_s)**2
 B_star = convert_B(_B_star)
 _B_NS = 1e14 * (_R_NS/_R_w_NS)**2
 B_NS = convert_B(_B_NS)
