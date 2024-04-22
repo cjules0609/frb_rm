@@ -183,6 +183,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
     // sigma = (B^2/2 + P_mag)/(e_i+e_k+p_g) = B^2/(p_g/(gamma_eos-1) + 0.5*rho*v^2 + p_g)
     rho_w_NS = B_NS * B_NS / sigma_NS / (cs_w_NS * cs_w_NS / (gamma_eos - 1) + 0.5 * v_w_NS * v_w_NS);
+    // rho_w_NS = rho_w_s;
     p_w_NS = cs_w_NS * cs_w_NS * rho_w_NS / gamma_eos;
 
     // calculate & print the wind info
