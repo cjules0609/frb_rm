@@ -38,8 +38,8 @@ double p_amb = 0.0;
 // orbital parameters
 double m_star = 0.0;
 double m_NS = 0.0;
-// double R_s = 0.0;
-// double R_NS = 0.0;
+double R_s = 0.0;
+double R_NS = 0.0;
 double a_binary = 0.0;
 double e_binary = 0.0;
 
@@ -128,7 +128,7 @@ double print_wind_info(std::string name, double ei, double ek, double eB, double
     std::cout << "  --B(r_w): " << B << std::endl;
     std::cout << "  --Sound speed(r_w): " << cs << std::endl;
     std::cout << "  --Velocity(r_w): " << v << std::endl;
-    std::cout << " -Total Luminosity: " << Ltot << std::endl;
+    std::cout << "  -Total Luminosity: " << Ltot << std::endl;
     std::cout << "   --Thermal Luminosity: " << Lt << ' ' << 100 * Lt / Ltot << "%" << std::endl;
     std::cout << "   --Kinetic Luminosity: " << Lk << ' ' << 100 * Lk / Ltot << "%" << std::endl;
     std::cout << "   --Mangetic Luminosity: " << Lm << ' ' << 100 * Lm / Ltot << "%" << std::endl;
@@ -150,8 +150,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     e_binary = pin->GetReal("problem", "e_binary");  // eccentricity of the binary system
     m_star = pin->GetReal("problem", "m_star");      // mass of the star
     m_NS = pin->GetReal("problem", "m_NS");          // mass of the NS
-    // R_s = pin->GetReal("problem", "R_s"); 
-    // R_NS = pin->GetReal("problem", "R_NS"); 
+    R_s = pin->GetReal("problem", "R_s"); 
+    R_NS = pin->GetReal("problem", "R_NS"); 
 
     // read wind parameters from the input file
 
@@ -240,8 +240,8 @@ void get_orbit_info(double time, double &x_s, double &y_s, double &vx_s, double 
 }
 
 void UpdateSrc(MeshBlock *pmb, const Real time, const Real dt, AthenaArray<Real> &cons, const AthenaArray<Real> &bcc) {
-    const double eps_s = R_w_s / 10;    // softening length
-    const double eps_NS = R_w_NS / 10;  // softening length
+    const double eps_s = R_s;    // softening length
+    const double eps_NS = R_NS;  // softening length
     double x_s = 0, y_s = 0, vx_s = 0, vy_s = 0, x_NS = 0, y_NS = 0, vx_NS = 0, vy_NS = 0;
     get_orbit_info(time, x_s, y_s, vx_s, vy_s, x_NS, y_NS, vx_NS, vy_NS);
 
@@ -427,9 +427,7 @@ void SetBfield(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is, int ie, i
                 pco->Edge3Length(k, j, is, ie + 1, len);
                 pco->Edge3Length(k, j + 1, is, ie + 1, len_p1);
                 for (int i = is; i <= ie + 1; ++i) {
-                    b.x1f(k, j, i) += (len_p1(i) * a3(k, j + 1, i) - len(i) * a3(k, j, i)) / area(i);
-
-                    
+                    b.x1f(k, j, i) += (len_p1(i) * a3(k, j + 1, i) - len(i) * a3(k, j, i)) / area(i);  
                 }
             }
         }

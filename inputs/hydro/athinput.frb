@@ -1,6 +1,6 @@
 <comment>
 problem   = spherical MHD blast wave in spherical coordinates
-configure = --prob=frb -b -s
+configure = --prob=frb -b
 
 <job>
 problem_id = frb      # problem ID: basename of output filenames
@@ -8,7 +8,7 @@ problem_id = frb      # problem ID: basename of output filenames
 <output1>
 file_type  = hdf5       # Binary data dump
 variable   = prim      # variables to be output
-dt         = 1e-3  # time increment between outputs
+dt         = 1e-6  # time increment between outputs
 
 <time>
 cfl_number = 0.3        # The Courant, Friedrichs, & Lewy (CFL) Number
@@ -19,32 +19,32 @@ xorder      = 2         # order of spatial reconstruction
 ncycle_out  = 10         # interval for stdout summary info
 
 <mesh>
-nx1        = 512       # Number of zones in X1-direction
+nx1        = 128       # Number of zones in X1-direction
 x1min      = -2    # minimum value of X1
 x1max      = 2     # maximum value of X1
 ix1_bc     = outflow   # inner-X1 boundary flag
 ox1_bc     = outflow    # outer-X1 boundary flag
 x1rat      = 1
 
-nx2        = 512               # Number of zones in X2-direction
+nx2        = 128               # Number of zones in X2-direction
 x2min      = -2                        # minimum value of X2
 x2max      = 2  	# maximum value of X2
 ix2_bc     = outflow             # inner-X2 boundary flag
 ox2_bc     = outflow              # outer-X2 boundary flag
 x2rat      = 1
 
-nx3        = 1             # Number of zones in X3-direction
+nx3        = 16             # Number of zones in X3-direction
 x3min      = -1        # minimum value of X3
 x3max      =  1       # maximum value of X3
 ix3_bc     = periodic         # inner-X3 boundary flag
 ox3_bc     = periodic        # outer-X3 boundary flag 
 
 <meshblock>
-nx1     =    64
-nx2     =    64
-nx3     =    1
+nx1     =    32
+nx2     =    32
+nx3     =    16
 
-#num_threads = 96
+num_threads = 8
 
 
 <hydro>
@@ -60,23 +60,23 @@ a_binary = 0.23333
 e_binary = 0
 
 m_star = 15 # m_sun
-# R_s = 0.0047
+R_s = 0.0047
 R_w_s = 0.04666 #(wind-launchiung surface NOT the radius of the star)
-Mdot_s = 1.58e-7  
+Mdot_s = 1.5844171242725686e-07
 v_w_s = 100  # stellar wind speed at the surface of the star
 cs_w_s = 0.1  # sound speed in the wind
-B_star = 4.3560173962258115e-5 # magnetic field strength at the surface of the star
-m_theta_s = 0 # magnetic moment angle x2-x3 plane
-m_phi_s = 0 # magnetic moment angle in x1-x2 plane
+B_star = 0.0004356017396225812 # magnetic field strength at the surface of the star
+m_theta_s = 0.0 # magnetic moment angle x2-x3 plane
+m_phi_s = 0.0 # magnetic moment angle in x1-x2 plane
 
 m_NS = 1.4
-# R_NS = 6.67e-9
+R_NS = 6.67e-9
 R_w_NS = 0.04666
 
 pulsar_wind = 1
 v_w_NS = 100
 cs_w_NS = 0.1
-B_NS = 0 # magnetic field strength at the surface of the NS
-sigma_NS = 0.00001
+B_NS = 0.0008889831420869 # magnetic field strength at the surface of the NS
+sigma_NS = 10
 m_theta_NS = 0  # magnetic moment angle x2-x3 plane
 m_phi_NS = 0 # magnetic moment angle in x1-x2 plane
